@@ -17,7 +17,10 @@ def get_posts():
 
 @router.get("/{post_id}", response_model=PostRead)
 def get_post(post_id: int):
-    return post_service.get_post_detail(post_id)
+    post = post_service.get_post_detail(post_id)
+    post_service.update_post_view_count(post_id, post.view_count + 1)
+
+    return post
 
 
 @router.put("/{post_id}", response_model=PostRead)
