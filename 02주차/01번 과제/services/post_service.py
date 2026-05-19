@@ -38,10 +38,7 @@ class PostService:
         return updated_post
 
     def delete_post(self, post_id: int):
-        if post_id not in self._post_dict:
-            raise HTTPException(status_code=404, detail="Post not found")
-
-        del self._post_dict[post_id]
+        self._post_dict.pop(post_id, None)
 
     def get_post_detail(self, post_id: int):
         post = self._post_dict.get(post_id)

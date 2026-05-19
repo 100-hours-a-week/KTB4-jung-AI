@@ -35,12 +35,8 @@ class CommentService:
 
     def delete_comment(self, post_id: int, comment_id: int):
         post_service.get_post_detail(post_id)
-
+        
         comments = self._comment_dict.setdefault(post_id, [])
-        comment_exists = any(c.id == comment_id for c in comments)
-        if not comment_exists:
-            raise HTTPException(status_code=404, detail="Comment not found")
-
         self._comment_dict[post_id] = [c for c in comments if c.id != comment_id]
 
     def get_comments(self, post_id: int):
