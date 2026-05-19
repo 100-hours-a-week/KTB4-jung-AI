@@ -1,21 +1,20 @@
+import json
+from pathlib import Path
 from fastapi import HTTPException
 from schemas import PostBase, PostRead
 
+DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "posts.json"
+
+_initial_posts = {}
+if DATA_PATH.exists():
+    with open(DATA_PATH, "r", encoding="utf-8") as f:
+        _data = json.load(f)
+        _initial_posts = {item["id"]: PostRead(**item) for item in _data}
+
 
 class PostService:
-    _post_dict = {
-        1: PostRead(
-            id=1, title="제목 1", content="내용 1", writer="작성자 1", view_count=0
-        ),
-        2: PostRead(
-            id=2, title="제목 2", content="내용 2", writer="작성자 2", view_count=0
-        ),
-        3: PostRead(
-            id=3, title="제목 3", content="내용 3", writer="작성자 3", view_count=0
-        ),
-    }
-
-    _max_post_id = 3
+    _post_dict = _initial_posts
+    _max_post_id = max(_initial_posts.keys()) if _initial_posts else 0
 
     def add_new_post(self, post_base: PostBase):
         PostService._max_post_id += 1

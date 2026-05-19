@@ -19,7 +19,6 @@ def get_posts():
 def get_post(post_id: int):
     post = post_service.get_post_detail(post_id)
     post_service.update_post_view_count(post_id, post.view_count + 1)
-
     return post
 
 
