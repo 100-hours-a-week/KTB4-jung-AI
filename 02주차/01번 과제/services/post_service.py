@@ -1,10 +1,20 @@
 from fastapi import HTTPException
-from schemas import PostBase, PostRead, PostUpdate
+from schemas import PostBase, PostRead
 
 
-class PostStorage:
-    post_dict = dict()
-    post_list = []
+class PostService:
+    post_dict = {
+        1: PostRead(
+            id=1, title="제목 1", content="내용 1", writer="작성자 1", view_count=0
+        ),
+        2: PostRead(
+            id=2, title="제목 2", content="내용 2", writer="작성자 2", view_count=0
+        ),
+        3: PostRead(
+            id=3, title="제목 3", content="내용 3", writer="작성자 3", view_count=0
+        ),
+    }
+    post_list = list(post_dict.values())
 
     def add_new_post(self, post_base: PostBase):
         new_id = self.post_list[-1].id + 1 if self.post_list else 1
@@ -16,22 +26,19 @@ class PostStorage:
 
         return post
 
-    def update_post(self, post_update: PostUpdate):
-        old_post = self.post_dict.get(post_update.id)
-
-        if not old_post:
-            raise HTTPException(status_code=404, detail="Post not found")
+    def update_post(self, post_id: int, post_update: PostBase):
+        old_post = self.get_post_detail(post_id)
 
         updated_post = PostRead(
-            id=post_update.id,
+            id=post_id,
             view_count=old_post.view_count,
             **post_update.model_dump(exclude={"id"}),
         )
 
-        self.post_dict[post_update.id] = updated_post
+        self.post_dict[post_id] = updated_post
 
         for idx, post in enumerate(self.post_list):
-            if post.id == post_update.id:
+            if post.id == post_id:
                 self.post_list[idx] = updated_post
                 break
 
@@ -53,5 +60,12 @@ class PostStorage:
     def get_all_post(self):
         return self.post_list
 
+    def update_post_view_count(self, post_id: int, view_count: int):
+        post = self.post_dict.get(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Post not found")
 
-post_service = PostStorage()
+        post.view_count = view_count
+
+
+post_service = PostService()
