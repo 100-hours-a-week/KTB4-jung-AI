@@ -14,7 +14,3 @@ class PostCreate(PostBase):
 class PostRead(PostBase):
     id: int = Field(..., description="게시글 고유 ID")
     view_count: int = Field(default=0, description="조회수")
-
-
-class PostUpdate(PostBase):
-    id: int = Field(..., description="게시글 고유 ID")

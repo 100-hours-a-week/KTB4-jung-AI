@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from schemas import PostBase, PostRead, PostUpdate
+from schemas import PostBase, PostRead
 from services.post_service import post_service
 
 router = APIRouter(prefix="/api/posts", tags=["Posts"])
@@ -21,8 +21,8 @@ def get_post(post_id: int):
 
 
 @router.put("/{post_id}", response_model=PostRead)
-def update_post(post_update: PostUpdate):
-    return post_service.update_post(post_update)
+def update_post(post_id: int, post_update: PostBase):
+    return post_service.update_post(post_id, post_update)
 
 
 @router.delete("/{post_id}")
