@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-from fastapi import HTTPException
 from schemas import Comment, CommentCreate
 
 from services.post_service import post_service
@@ -35,7 +34,7 @@ class CommentService:
 
     def delete_comment(self, post_id: int, comment_id: int):
         post_service.get_post_detail(post_id)
-        
+
         comments = self._comment_dict.setdefault(post_id, [])
         self._comment_dict[post_id] = [c for c in comments if c.id != comment_id]
 
