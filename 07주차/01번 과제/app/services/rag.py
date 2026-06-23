@@ -1,7 +1,9 @@
 import os
 import json
+import logging
 from kiwipiepy import Kiwi
 from langchain_core.documents import Document
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_community.retrievers import BM25Retriever
 from langchain_classic.retrievers import EnsembleRetriever
 from app.core.config import settings
@@ -11,6 +13,9 @@ from app.core.llm import LLMManager
 # Initialize Kiwi morpheme analyzer once at module level
 kiwi = Kiwi()
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
+logger = logging.getLogger(__name__)
+
 class ChunkWrapper:
     def __init__(self, text: str):
         self.text = text
@@ -19,6 +24,7 @@ class RagService:
     def __init__(self):
         self.vector_store_manager = VectorStoreManager()
         self.llm_manager = LLMManager()
+        self.sessions: dict[str, list] = {}
         self.init_bm25_retriever()
 
     @staticmethod
@@ -61,6 +67,11 @@ class RagService:
             )
         return vector_retriever
 
+    def get_session_history(self, session_id: str) -> list:
+        if session_id not in self.sessions:
+            self.sessions[session_id] = []
+        return self.sessions[session_id]
+
     def index_documents(self, chunks_file_path: str = None) -> int:
         if chunks_file_path is None:
             local_path = os.path.join(settings.BASE_DIR, "chunks.json")
@@ -98,41 +109,100 @@ class RagService:
         self.vector_store_manager.delete_existing_documents(ids)
         self.vector_store_manager.add_documents_batch(documents_to_add, ids)
         
-        # Re-build BM25 retriever with newly indexed documents
         self.init_bm25_retriever()
             
         print(f"Successfully indexed {len(ids)} documents in Chroma DB.")
         return len(ids)
         
-    def query(self, question: str, top_k: int = 5) -> dict:
+    def query(self, question: str, session_id: str, top_k: int = 5) -> dict:
         retriever = self.get_ensemble_retriever(top_k)
         
-        rag_chain = self.llm_manager.create_rag_chain(retriever)
-        response = rag_chain.invoke({"input": question})
+        logger.info("=== RAG Database Query Access ===")
+        logger.info(f"Session ID: {session_id}")
+        logger.info(f"Question: {question}")
         
-        retrieved_docs = response.get("context", [])
-        contexts = [doc.page_content for doc in retrieved_docs]
-        metadatas = [doc.metadata for doc in retrieved_docs]
+        docs = retriever.invoke(question)
+        
+        logger.info(f"RAG DB Result (Found {len(docs)} documents):")
+        for idx, doc in enumerate(docs):
+            logger.info(f"  [{idx + 1}] ID: {doc.metadata.get('id')} | Content: {doc.page_content[:150]}...")
+            
+        history = self.get_session_history(session_id)
+        
+        formatted_messages = self.llm_manager.prompt_template.format_messages(
+            context=docs,
+            chat_history=history,
+            input=question
+        )
+        
+        logger.info("=== Formatted Final Prompt to LLM ===")
+        for idx, msg in enumerate(formatted_messages):
+            logger.info(f"  [{idx + 1}] {msg.type.upper()}: {msg.content}")
+        logger.info("=====================================")
+
+        stuff_chain = self.llm_manager.create_stuff_chain()
+        answer = stuff_chain.invoke({
+            "input": question,
+            "chat_history": history,
+            "context": docs
+        })
+        
+        history.append(HumanMessage(content=question))
+        history.append(AIMessage(content=answer))
+        self.sessions[session_id] = history[-10:]
+        
+        contexts = [doc.page_content for doc in docs]
+        metadatas = [doc.metadata for doc in docs]
         
         return {
-            "answer": response.get("answer", ""),
+            "answer": answer,
             "contexts": contexts,
             "metadatas": metadatas
         }
         
-    def query_stream(self, question: str, top_k: int = 5):
+    def query_stream(self, question: str, session_id: str, top_k: int = 5):
         retriever = self.get_ensemble_retriever(top_k)
+        
+        logger.info("=== RAG Database Query Stream Access ===")
+        logger.info(f"Session ID: {session_id}")
+        logger.info(f"Question: {question}")
+        
         docs = retriever.invoke(question)
+        
+        logger.info(f"RAG DB Result (Found {len(docs)} documents):")
+        for idx, doc in enumerate(docs):
+            logger.info(f"  [{idx + 1}] ID: {doc.metadata.get('id')} | Content: {doc.page_content[:150]}...")
+            
+        history = self.get_session_history(session_id)
+        
+        formatted_messages = self.llm_manager.prompt_template.format_messages(
+            context=docs,
+            chat_history=history,
+            input=question
+        )
+        
+        logger.info("=== Formatted Final Prompt to LLM ===")
+        for idx, msg in enumerate(formatted_messages):
+            logger.info(f"  [{idx + 1}] {msg.type.upper()}: {msg.content}")
+        logger.info("=====================================")
+        
         contexts = [doc.page_content for doc in docs]
         metadatas = [doc.metadata for doc in docs]
         
         stuff_chain = self.llm_manager.create_stuff_chain()
         
         def response_generator():
+            accumulated_answer = ""
             for chunk in stuff_chain.stream({
                 "context": docs,
-                "input": question
+                "input": question,
+                "chat_history": history
             }):
+                accumulated_answer += chunk
                 yield ChunkWrapper(chunk)
+            
+            history.append(HumanMessage(content=question))
+            history.append(AIMessage(content=accumulated_answer))
+            self.sessions[session_id] = history[-10:]
                 
         return response_generator(), contexts, metadatas

@@ -45,7 +45,7 @@ async def run_indexing(service: RagService = Depends(get_rag_service)):
 @router.post("/query", response_model=QueryResponse, summary="RAG 질의 요청")
 async def query_rag(req: QueryRequest, service: RagService = Depends(get_rag_service)):
     try:
-        result = service.query(req.question, req.top_k)
+        result = service.query(req.question, req.session_id, req.top_k)
         return QueryResponse(
             answer=result["answer"],
             contexts=result["contexts"],
@@ -61,7 +61,7 @@ async def query_rag_stream(
 ):
     try:
         response_stream, documents, metadatas = service.query_stream(
-            req.question, req.top_k
+            req.question, req.session_id, req.top_k
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Streaming query failed: {str(e)}")

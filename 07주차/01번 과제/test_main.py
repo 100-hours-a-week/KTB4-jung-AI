@@ -53,7 +53,11 @@ def test_query_endpoint():
         "metadatas": [{"id": 3, "char_count": 50}],
     }
 
-    payload = {"question": "지각 3번 하면 어떻게 되나요?", "top_k": 3}
+    payload = {
+        "question": "지각 3번 하면 어떻게 되나요?",
+        "top_k": 3,
+        "session_id": "test-session-id"
+    }
     response = client.post("/query", json=payload)
 
     assert response.status_code == 200
@@ -63,7 +67,7 @@ def test_query_endpoint():
     assert data["contexts"][0] == "지각·조퇴·외출 3회 누적 시 1일 결석 처리"
     assert data["metadatas"][0]["id"] == 3
 
-    mock_service.query.assert_called_once_with("지각 3번 하면 어떻게 되나요?", 3)
+    mock_service.query.assert_called_once_with("지각 3번 하면 어떻게 되나요?", "test-session-id", 3)
 
 
 def test_query_stream_endpoint():
@@ -78,7 +82,11 @@ def test_query_stream_endpoint():
         [{"id": 3}],
     )
 
-    payload = {"question": "지각 3회?", "top_k": 2}
+    payload = {
+        "question": "지각 3회?",
+        "top_k": 2,
+        "session_id": "test-session-id"
+    }
 
     with client.stream("POST", "/query/stream", json=payload) as response:
         assert response.status_code == 200
@@ -94,7 +102,7 @@ def test_query_stream_endpoint():
         assert "data: 지각" in lines[2]
         assert "data:  3회 누적" in lines[3]
 
-        mock_service.query_stream.assert_called_once_with("지각 3회?", 2)
+        mock_service.query_stream.assert_called_once_with("지각 3회?", "test-session-id", 2)
 
 
 def test_chat_ui_endpoint():
