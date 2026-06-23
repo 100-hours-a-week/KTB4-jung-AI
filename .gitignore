@@ -219,3 +219,7 @@ __marimo__/
 /.idea
 **/.omc
 **/data
+
+# Chroma DB directories
+**/chroma_db/
+**/chroma_data/
