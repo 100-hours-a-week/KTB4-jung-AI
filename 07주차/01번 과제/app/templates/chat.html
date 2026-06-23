@@ -453,6 +453,16 @@
   </div>
 
   <script>
+    let sessionId = sessionStorage.getItem('rag_session_id');
+    if (!sessionId) {
+      try {
+        sessionId = crypto.randomUUID();
+      } catch (e) {
+        sessionId = 'session-' + Math.random().toString(36).substring(2, 15);
+      }
+      sessionStorage.setItem('rag_session_id', sessionId);
+    }
+
     const chatContainer = document.getElementById('chatContainer');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -541,7 +551,8 @@
           },
           body: JSON.stringify({
             question: question,
-            top_k: 5
+            top_k: 5,
+            session_id: sessionId
           })
         });
 

@@ -1,5 +1,5 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_classic.chains import create_retrieval_chain
 from app.core.config import settings
@@ -24,6 +24,7 @@ Your primary role is to answer questions strictly based on the provided [Educati
 
 [Education Rules and Regulations Document (Context)]
 {context}"""),
+            MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}")
         ])
 
