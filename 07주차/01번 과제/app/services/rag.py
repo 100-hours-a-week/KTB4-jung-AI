@@ -16,6 +16,9 @@ kiwi = Kiwi()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+logging.getLogger("google_genai").setLevel(logging.WARNING)
+logging.getLogger("google_genai._api_client").setLevel(logging.WARNING)
+
 class ChunkWrapper:
     def __init__(self, text: str):
         self.text = text
