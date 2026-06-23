@@ -39,12 +39,14 @@ _CAT_INDICES = set(range(281, 286))
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
-TRANSFORM = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
+TRANSFORM = transforms.Compose(
+    [
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ]
+)
 
 
 class DogCatClassifier:
@@ -92,8 +94,12 @@ class DogCatClassifier:
         }
 
 
-def run_folder(classifier: DogCatClassifier, folder: Path, true_label: str) -> tuple[int, int]:
-    images = [p for p in sorted(folder.iterdir()) if p.suffix.lower() in IMAGE_EXTENSIONS]
+def run_folder(
+    classifier: DogCatClassifier, folder: Path, true_label: str
+) -> tuple[int, int]:
+    images = [
+        p for p in sorted(folder.iterdir()) if p.suffix.lower() in IMAGE_EXTENSIONS
+    ]
     if not images:
         print(f"  [WARN] No images found in {folder}")
         return 0, 0
@@ -103,7 +109,9 @@ def run_folder(classifier: DogCatClassifier, folder: Path, true_label: str) -> t
         result = classifier.predict(img_path)
         mark = "O" if result["label"] == true_label else "X"
         conf = result["confidence"] * 100
-        print(f"  [{mark}] {img_path.name:40s} -> {result['label'].upper():3s}  ({conf:.1f}%)  [dog={result['dog']:.3f}, cat={result['cat']:.3f}, etc={result['etc']:.3f}]")
+        print(
+            f"  [{mark}] {img_path.name:40s} -> {result['label'].upper():3s}  ({conf:.1f}%)  [dog={result['dog']:.3f}, cat={result['cat']:.3f}, etc={result['etc']:.3f}]"
+        )
         if result["label"] == true_label:
             correct += 1
 
@@ -126,7 +134,11 @@ def main():
 
     total_correct, total_count = 0, 0
 
-    for folder, label in [(dog_dir, "dog"), (cat_dir, "cat"), (data_dir / "etc", "etc")]:
+    for folder, label in [
+        (dog_dir, "dog"),
+        (cat_dir, "cat"),
+        (data_dir / "etc", "etc"),
+    ]:
         if not folder.exists():
             print(f"[SKIP] '{folder}' 폴더 없음\n")
             continue
@@ -138,7 +150,9 @@ def main():
             print(f"  -> {correct}/{count} 정답 ({correct/count*100:.1f}%)\n")
 
     if total_count:
-        print(f"전체 정확도: {total_correct}/{total_count} ({total_correct/total_count*100:.1f}%)")
+        print(
+            f"전체 정확도: {total_correct}/{total_count} ({total_correct/total_count*100:.1f}%)"
+        )
 
 
 if __name__ == "__main__":

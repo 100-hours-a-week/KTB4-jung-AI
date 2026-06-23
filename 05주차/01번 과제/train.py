@@ -20,13 +20,15 @@ from torchvision import datasets, transforms
 
 from classifier import IMAGENET_TRANSFORM, _build_finetuned_resnet
 
-TRAIN_TRANSFORM = transforms.Compose([
-    transforms.RandomResizedCrop(224),
-    transforms.RandomHorizontalFlip(),
-    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
+TRAIN_TRANSFORM = transforms.Compose(
+    [
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ]
+)
 
 
 def train(
@@ -43,7 +45,9 @@ def train(
     train_ds = datasets.ImageFolder(data_dir / "train", transform=TRAIN_TRANSFORM)
     val_ds = datasets.ImageFolder(data_dir / "val", transform=IMAGENET_TRANSFORM)
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
+    train_loader = DataLoader(
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=4
+    )
     val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
 
     print(f"Train: {len(train_ds)} samples | Val: {len(val_ds)} samples")
@@ -107,9 +111,15 @@ def _evaluate(model, loader, criterion, device):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Fine-tune ResNet50 for dog/cat classification")
-    parser.add_argument("--data", required=True, help="Path to dataset root (train/val subdirs)")
-    parser.add_argument("--output", default="dogcat_resnet50.pth", help="Output weights path")
+    parser = argparse.ArgumentParser(
+        description="Fine-tune ResNet50 for dog/cat classification"
+    )
+    parser.add_argument(
+        "--data", required=True, help="Path to dataset root (train/val subdirs)"
+    )
+    parser.add_argument(
+        "--output", default="dogcat_resnet50.pth", help="Output weights path"
+    )
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
