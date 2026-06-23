@@ -15,4 +15,6 @@ dependencies = [
     "langchain-classic>=1.0.8",
     "pydantic-settings>=2.14.1",
     "pytest>=9.1.1",
+    "kiwipiepy",
+    "rank-bm25",
 ]
